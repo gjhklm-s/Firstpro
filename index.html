@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        main {
+            padding: 2rem;
+            background: white;
+            margin: 1rem auto;
+            max-width: 800px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+            color: white;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Auction System</h1>
+    </header>
+    <main>
+        <h2>Enter Auction Details</h2>
+        <select id="teamName">
+            <option value="">Select User</option>
+            <option value="Sujin">Sujin</option>
+            <option value="Ajin">Ajin</option>
+            <option value="Abi">Abi</option>
+            <option value="Asoke">Asoke</option>
+            <option value="Kamal">Kamal</option>
+            <option value="Anish">Anish</option>
+            <option value="DD">DD</option>
+            <option value="Raja">Raja</option>
+            <option value="Aswath">Aswath</option>
+            <option value="Varshan">Varshan</option>
+        </select>
+        <button onclick="setTeam()">Select User</button>
+        <h3 id="selectedTeam"></h3>
+        <input type="text" id="playerName" placeholder="Enter Player Name">
+        <input type="number" id="price" placeholder="Enter Price in Cr">
+        <button onclick="addToAuction()">Add to Auction</button>
+        <h2>Users</h2>
+        <div id="teamsContainer"></div>
+    </main>
+    <script>
+        let teams = JSON.parse(localStorage.getItem("teams")) || {
+            "Sujin": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Ajin": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Abi": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Asoke": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Kamal": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Anish": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "DD": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Raja": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Aswath": { players: [], totalSpent: 0, remainingBudget: 150 },
+            "Varshan": { players: [], totalSpent: 0, remainingBudget: 150 }
+        };
+        let totalBudget = 150;
+        let playerLimit = 5;
+        
+        function setTeam() {
+            const selectedTeam = document.getElementById("teamName").value;
+            if (!selectedTeam) {
+                alert("Please select a user!");
+                return;
+            }
+            document.getElementById("selectedTeam").textContent = "Selected User: " + selectedTeam;
+        }
+        
+        function addToAuction() {
+            const selectedTeam = document.getElementById("teamName").value;
+            const player = document.getElementById("playerName").value;
+            let price = parseFloat(document.getElementById("price").value);
+            
+            if (!selectedTeam || !player || isNaN(price) || price <= 0) {
+                alert("Please enter valid details!");
+                return;
+            }
+            
+            if (teams[selectedTeam].players.length >= playerLimit) {
+                alert("Player limit reached for this user!");
+                return;
+            }
+            
+            if (teams[selectedTeam].totalSpent + price > totalBudget) {
+                alert("Budget Exceeded! You cannot spend more than ₹150 Cr.");
+                return;
+            }
+            
+            teams[selectedTeam].players.push({ player, price });
+            teams[selectedTeam].totalSpent += price;
+            teams[selectedTeam].remainingBudget = totalBudget - teams[selectedTeam].totalSpent;
+            localStorage.setItem("teams", JSON.stringify(teams));
+            updateTeamTables();
+        }
+        
+        function removePlayer(team, index) {
+            teams[team].totalSpent -= teams[team].players[index].price;
+            teams[team].remainingBudget = totalBudget - teams[team].totalSpent;
+            teams[team].players.splice(index, 1);
+            localStorage.setItem("teams", JSON.stringify(teams));
+            updateTeamTables();
+        }
+        
+        function updateTeamTables() {
+            const teamsContainer = document.getElementById("teamsContainer");
+            teamsContainer.innerHTML = "";
+            
+            for (let team in teams) {
+                const teamDiv = document.createElement("div");
+                teamDiv.innerHTML = `
+                    <h3>${team} (Players: ${teams[team].players.length}/${playerLimit})</h3>
+                    <p><strong>Total Spent: ₹${teams[team].totalSpent.toFixed(2)} Cr</strong></p>
+                    <p><strong>Remaining Budget: ₹${teams[team].remainingBudget.toFixed(2)} Cr</strong></p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Price (Cr)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${teams[team].players.map((player, index) => `
+                                <tr>
+                                    <td>${player.player}</td>
+                                    <td>₹${player.price.toFixed(2)} Cr</td>
+                                    <td><button onclick="removePlayer('${team}', ${index})">Remove</button></td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                `;
+                teamsContainer.appendChild(teamDiv);
+            }
+        }
+        
+        updateTeamTables();
+    </script>
+</body>
+</html>
